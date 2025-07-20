@@ -47,17 +47,15 @@
         </header>
 
         <main class="space-y-8">
-            <!-- Section Configuration -->
             <section class="bg-white p-6 rounded-lg shadow-md">
                 <h2 class="text-xl font-bold mb-4">Configuration</h2>
                 <div class="flex flex-col md:flex-row items-center gap-4">
                     <label for="webhookUrl" class="font-semibold flex-shrink-0">URL du Webhook Discord:</label>
                     <input type="password" id="webhookUrl" placeholder="Collez l'URL de votre webhook ici" class="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition">
                 </div>
-                 <p class="text-xs text-gray-500 mt-2">Votre URL est stockée localement et n'est jamais partagée. Elle est nécessaire pour envoyer les mises à jour sur votre serveur Discord.</p>
+                   <p class="text-xs text-gray-500 mt-2">Votre URL est stockée localement et n'est jamais partagée. Elle est nécessaire pour envoyer les mises à jour sur votre serveur Discord.</p>
             </section>
 
-            <!-- Section Ajout de Location -->
             <section class="bg-white p-6 rounded-lg shadow-md">
                 <h2 class="text-xl font-bold mb-4">Ajouter une location</h2>
                 <form id="addRentalForm" class="space-y-4">
@@ -79,24 +77,20 @@
                 </form>
             </section>
 
-            <!-- Section Locations en cours -->
             <section class="bg-white p-6 rounded-lg shadow-md">
                 <div class="flex justify-between items-center mb-4">
                     <h2 class="text-xl font-bold">Locations en cours</h2>
                     <div id="discord-status" class="text-sm text-gray-500"></div>
                 </div>
                 <div id="rentalList" class="space-y-4">
-                    <!-- Les locations seront injectées ici par JavaScript -->
                     <p class="text-center text-gray-500 py-4">Aucune location en cours pour le moment.</p>
                 </div>
             </section>
         </main>
     </div>
 
-    <!-- Toast pour les notifications -->
     <div id="toast" class="toast"></div>
 
-    <!-- Modal de confirmation -->
     <div id="confirmationModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full flex items-center justify-center" style="display: none; z-index: 2000;">
         <div class="bg-white p-6 rounded-lg shadow-xl w-full max-w-md mx-4">
             <h3 class="text-lg font-bold mb-4" id="modalTitle">Confirmation</h3>
@@ -114,12 +108,31 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getFirestore, collection, addDoc, onSnapshot, deleteDoc, doc, query } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        // Si vous utilisez Google Analytics avec Firebase, décommentez l'importation ci-dessous :
+        // import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-analytics.js";
 
-        // --- Configuration et Initialisation ---
-        const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'discord-rental-manager';
+        // --- Configuration et Initialisation Firebase ---
+        // CE BLOC A ÉTÉ MODIFIÉ AVEC VOTRE CONFIGURATION FIREBASE
+        const firebaseConfig = {
+          apiKey: "AIzaSyCsznF300tTXldKUZ9hm-Ruuxizq4FJyqq",
+          authDomain: "gestionnairelocationsdiscord.firebaseapp.com",
+          projectId: "gestionnairelocationsdiscord",
+          storageBucket: "gestionnairelocationsdiscord.appspot.com",
+          messagingSenderId: "972935386613",
+          appId: "1:972935386613:web:389d9ba93d08005ae5bcbc",
+          measurementId: "G-C1NHRQXSB7" // Ce champ est facultatif
+        };
+
+        // Initialisation de l'application Firebase
+        const app = initializeApp(firebaseConfig);
+        // Si vous utilisez Google Analytics avec Firebase, décommentez la ligne ci-dessous :
+        // const analytics = getAnalytics(app);
+
+        // Cette variable est utilisée pour structurer la base de données Firestore par application
+        const appId = 'discord-rental-manager';
         
-        let app, db, auth, userId;
+        // Déclarations des variables globales, 'app' est déjà initialisée ci-dessus
+        let db, auth, userId;
         let rentalsCollection;
 
         // Variable pour stocker l'ID du message Discord et l'état des locations
@@ -278,8 +291,8 @@
         // Initialisation de l'application
         async function initialize() {
             try {
-                app = initializeApp(firebaseConfig);
-                db = getFirestore(app);
+                // 'app' est déjà initialisé globalement au-dessus
+                db = getFirestore(app); // Utilise l'instance 'app' déjà définie
                 auth = getAuth(app);
                 await signInAnonymously(auth);
                 userId = auth.currentUser.uid;
@@ -294,11 +307,18 @@
                 setInterval(() => {
                     renderRentals();
                     sendToDiscord();
-                }, 60 * 1000);
+                }, 60 * 1000); // Met à jour toutes les minutes
 
             } catch (error) {
                 console.error("Erreur d'initialisation Firebase:", error);
-                document.body.innerHTML = `<div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert"><strong class="font-bold">Erreur critique!</strong><span class="block sm:inline"> Impossible d'initialiser la base de données.</span></div>`;
+                // Affiche un message d'erreur visible si Firebase ne s'initialise pas
+                document.body.innerHTML = `<div class="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center p-4">
+                                            <div class="bg-red-100 border border-red-400 text-red-700 px-6 py-4 rounded-lg shadow-xl" role="alert">
+                                                <strong class="font-bold">Erreur critique!</strong>
+                                                <span class="block sm:inline mt-2"> Impossible d'initialiser la base de données. Assurez-vous que votre configuration Firebase est correcte et que les règles de sécurité sont configurées pour l'accès anonyme.</span>
+                                                <p class="text-sm mt-2">Vérifiez la console du navigateur (F12) pour plus de détails.</p>
+                                            </div>
+                                        </div>`;
             }
         }
 
@@ -351,7 +371,7 @@
         webhookUrlInput.addEventListener('change', (e) => {
             localStorage.setItem('discordWebhookUrl', e.target.value);
             showToast("URL du Webhook enregistrée.");
-            discordMessageId = null;
+            discordMessageId = null; // Réinitialise l'ID du message Discord pour en envoyer un nouveau si l'URL change
         });
         
         window.addEventListener('load', () => {
